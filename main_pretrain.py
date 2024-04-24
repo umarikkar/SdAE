@@ -31,6 +31,7 @@ import util.misc as misc
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 from util.pos_embed import interpolate_pos_embed
 from util.cosine_scheduler import cosine_scheduler
+from util.loader import MyImageFolder
 
 import models_mae
 import models_teacher
@@ -119,10 +120,9 @@ def get_args_parser():
         When ncrop_loss is None, the multi-fold strategy will not be operated. All masked tokens are fed without bundle.""")
 
     # Dataset parameters
-    parser.add_argument('--data_path', default='/cache/imagenet/', type=str, help='The path of imagenet. Make sure there exists [data_path]/train and [data_path]/val') 
-
-    parser.add_argument('--output_dir', default='/cache/output/',
-                        help='path where to save, empty for no saving')
+    parser.add_argument('--data_path', default='/vol/research/fmodel_medical/people/umar/datasets/tcga/tcga-coad/psps/20x/', type=str,
+        help='Please specify path to the ImageNet training data.')
+    parser.add_argument('--output_dir', default="out_test", type=str, help='Path to save logs and checkpoints.')
     parser.add_argument('--log_dir', default='/cache/output/',                      
                         help='path where to tensorboard log')
     parser.add_argument('--device', default='cuda',
@@ -171,7 +171,17 @@ def main(args):
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-    dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
+    # dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
+    def valid_checker(filename):
+        if filename.endswith('.jpg'):
+            return True
+        else:
+            return False
+        
+    dataset_train = MyImageFolder(root=args.data_path, transform=transform_train,
+                                  is_valid_file=valid_checker)
+ 
+    
     print(dataset_train)
 
     if True:  # args.distributed:
